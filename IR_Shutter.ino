@@ -1,5 +1,8 @@
 //使用中断调整快门时间和间隔 2016-10-08
-
+/*
+待办任务
+研究使用中断与按键防抖
+*/
 /*******************************************
  *
  * Name.......:  multiCameraIrControl Library - Sony Example
@@ -87,7 +90,7 @@ if(capture_end_interrupted)
       break;
       }
   }
-  
+
 //  A900.shutterNow();
   digitalWrite(9,HIGH);
   delay(capture_start);
