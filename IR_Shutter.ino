@@ -2,9 +2,12 @@
 //电路图 https://circuits.io/circuits/2906659-romote-ir-shutter
 /*
   待办任务
-  研究使用中断与按键防抖
+  OK 研究使用中断与按键防抖
   或许只要一个固定时间就行了？研究一下常用的曝光时间。
   使用Fusion设计外壳？
+  记录和清除已拍摄次数，EEPROM？
+  参考 http://www.thingiverse.com/thing:336007
+  调整分、秒,参考http://forum.arduino.cc/index.php?topic=183732.0 的button1和button2
 */
 /*******************************************
 
@@ -31,11 +34,11 @@
 Sony A900(9);
 //控制拍摄时长的插口、时长(毫秒)
 const int capture_start_pin = 2;
-int capture_start = 100;
+int capture_start = 5000;
 boolean capture_start_interrupted = false;
 //控制间隙时长的插口和时长(毫秒),用于等待相机处理图片
 const int capture_end_pin = 18;
-int capture_end = 100;
+int capture_end = 5000;
 boolean capture_end_interrupted = false;
 
 
@@ -46,16 +49,18 @@ void setup() {
   pinMode(capture_start_pin, INPUT_PULLUP);
   pinMode(9, OUTPUT);
   digitalWrite(9, HIGH);
-  attachInterrupt(0, capture_start_delay, RISING);
-  attachInterrupt(5, capture_end_delay, RISING);
+  // attachInterrupt(0, capture_start_delay, RISING);
+  //  attachInterrupt(5, capture_end_delay, RISING);
   //速度指示器
   pinMode(10, OUTPUT);
   pinMode(11, OUTPUT);
   pinMode(12, OUTPUT);
   pinMode(5, OUTPUT);
+  pinMode(3, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
   digitalWrite(5, LOW);
+  digitalWrite(3, LOW);
   digitalWrite(6, LOW);
   digitalWrite(7, HIGH);
   digitalWrite(10, LOW);
@@ -67,29 +72,29 @@ void loop() {
 
   if (capture_start_interrupted)
   { switch (capture_start) {
-      case 100:
-        capture_start = 1000;
-        capture_start_interrupted = false;
+      case 2000:
         digitalWrite(10, LOW);
         digitalWrite(11, HIGH);
         digitalWrite(12, HIGH);
-        delay(200);
-        break;
-      case 1000:
         capture_start = 5000;
         capture_start_interrupted = false;
+        delay(100);
+        break;
+      case 5000:
         digitalWrite(10, HIGH);
         digitalWrite(11, HIGH);
         digitalWrite(12, HIGH);
-        delay(200);
-        break;
-      case 5000:
-        capture_start = 100;
+        capture_start = 10000;
         capture_start_interrupted = false;
+        delay(100);
+        break;
+      case 10000:
         digitalWrite(10, LOW);
         digitalWrite(11, LOW);
         digitalWrite(12, HIGH);
-        delay(200);
+        capture_start = 2000;
+        capture_start_interrupted = false;
+        delay(100);
         break;
     }
   }
@@ -97,57 +102,62 @@ void loop() {
 
   if (capture_end_interrupted)
   { switch (capture_end) {
-      case 100:
-        capture_end = 1000;
-        capture_end_interrupted = false;
+      case 2000:
         digitalWrite(5, LOW);
         digitalWrite(6, HIGH);
         digitalWrite(7, HIGH);
-        delay(500);
-        break;
-      case 1000:
         capture_end = 5000;
         capture_end_interrupted = false;
+        delay(100);
+        break;
+      case 5000:
         digitalWrite(5, HIGH);
         digitalWrite(6, HIGH);
         digitalWrite(7, HIGH);
-        delay(500);
-        break;
-      case 5000:
-        capture_end = 100;
+        capture_end = 10000;
         capture_end_interrupted = false;
+        delay(100);
+        break;
+      case 10000:
         digitalWrite(5, LOW);
         digitalWrite(6, LOW);
         digitalWrite(7, HIGH);
-        delay(500);
+        capture_end = 200;
+        capture_end_interrupted = false;
+        delay(100);
         break;
     }
   }
 
-  //  A900.shutterNow();
-  digitalWrite(9, HIGH);
+  A900.shutterNow();
+  // digitalWrite(9, HIGH);
   //Serial.print("Start: ");
   //Serial.print(capture_start);
   //Serial.print(" ");
-  delay(capture_start);
-  //    A900.shutterNow();
-  digitalWrite(9, LOW);
-  //Serial.print("END: ");
-  // Serial.println(capture_end);
-  //    Serial.println('End: '+capture_end);
-  delay(capture_end);
+  for (int i = 0; i < 13; i++)  {
+      digitalWrite(3, LOW);
+      delay(capture_start);
+      digitalWrite(3, HIGH);
+      delay(capture_start);
+    }
+    A900.shutterNow();
+    //digitalWrite(9, LOW);
+    //Serial.print("END: ");
+    // Serial.println(capture_end);
+    //    Serial.println('End: '+capture_end);
+    delay(capture_end);
 
-  //  A900.shutterDelayed();
-  //  delay(5000);
-  //  A900.toggleVideo();
-  //  delay(5000);
-}
+    //  A900.shutterDelayed();
+    //  delay(5000);
+    //  A900.toggleVideo();
+    //  delay(5000);
+  }
 
-void capture_start_delay() {
-  capture_start_interrupted = true;
-}
+  void capture_start_delay() {
+    capture_start_interrupted = true;
+  }
 
 
-void capture_end_delay() {
-  capture_end_interrupted = true;
-}
+  void capture_end_delay() {
+    capture_end_interrupted = true;
+  }
